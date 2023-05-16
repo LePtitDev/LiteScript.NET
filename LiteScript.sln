@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiteScript", "LiteScript\LiteScript.csproj", "{3BACC595-33FB-4D8A-86ED-375BEA5346A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteScript.Tests", "LiteScript.Tests\LiteScript.Tests.csproj", "{D390971E-9183-401C-A03D-F53E303A2360}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3BACC595-33FB-4D8A-86ED-375BEA5346A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BACC595-33FB-4D8A-86ED-375BEA5346A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BACC595-33FB-4D8A-86ED-375BEA5346A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BACC595-33FB-4D8A-86ED-375BEA5346A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D390971E-9183-401C-A03D-F53E303A2360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D390971E-9183-401C-A03D-F53E303A2360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D390971E-9183-401C-A03D-F53E303A2360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D390971E-9183-401C-A03D-F53E303A2360}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F2B69A4-18A7-490A-80CA-8F65B14C93A4}
+	EndGlobalSection
+EndGlobal
