@@ -1,15 +1,15 @@
 ﻿namespace LiteScript.Syntax;
 
-internal struct Number
+internal struct SyntaxNumber
 {
-    public Number(long value)
+    public SyntaxNumber(long value)
     {
         IsInteger = true;
         AsInteger = value;
         AsDouble = default;
     }
 
-    public Number(double value)
+    public SyntaxNumber(double value)
     {
         IsInteger = false;
         AsInteger = default;

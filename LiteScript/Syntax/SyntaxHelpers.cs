@@ -1,58 +1,61 @@
-﻿namespace LiteScript.Syntax;
+﻿using System.Drawing;
+using System.Text;
+
+namespace LiteScript.Syntax;
 
 internal static class SyntaxHelpers
 {
-    public static int GetOperatorPriority(Operator op)
+    public static int GetOperatorPriority(SyntaxOperator op)
     {
         switch (op)
         {
-            case Operator.PostIncr:
-            case Operator.PostDecr:
-            case Operator.Call:
-            case Operator.Get:
-            case Operator.Member:
+            case SyntaxOperator.PostIncr:
+            case SyntaxOperator.PostDecr:
+            case SyntaxOperator.Call:
+            case SyntaxOperator.Get:
+            case SyntaxOperator.Member:
                 return 1;
-            case Operator.PreIncr:
-            case Operator.PreDecr:
-            case Operator.UnaryPlus:
-            case Operator.UnaryMinus:
-            case Operator.Not:
-            case Operator.BitNot:
-            case Operator.New:
+            case SyntaxOperator.PreIncr:
+            case SyntaxOperator.PreDecr:
+            case SyntaxOperator.UnaryPlus:
+            case SyntaxOperator.UnaryMinus:
+            case SyntaxOperator.Not:
+            case SyntaxOperator.BitNot:
+            case SyntaxOperator.New:
                 return 2;
-            case Operator.Mul:
-            case Operator.Div:
-            case Operator.Mod:
+            case SyntaxOperator.Mul:
+            case SyntaxOperator.Div:
+            case SyntaxOperator.Mod:
                 return 3;
-            case Operator.Add:
-            case Operator.Sub:
+            case SyntaxOperator.Add:
+            case SyntaxOperator.Sub:
                 return 4;
-            case Operator.LShift:
-            case Operator.RShift:
+            case SyntaxOperator.LShift:
+            case SyntaxOperator.RShift:
                 return 5;
-            case Operator.Less:
-            case Operator.LessEqu:
-            case Operator.Great:
-            case Operator.GreatEqu:
+            case SyntaxOperator.Less:
+            case SyntaxOperator.LessEqu:
+            case SyntaxOperator.Great:
+            case SyntaxOperator.GreatEqu:
                 return 6;
-            case Operator.Equ:
-            case Operator.Dif:
+            case SyntaxOperator.Equ:
+            case SyntaxOperator.Dif:
                 return 7;
-            case Operator.BitAnd:
+            case SyntaxOperator.BitAnd:
                 return 8;
-            case Operator.BitXor:
+            case SyntaxOperator.BitXor:
                 return 9;
-            case Operator.BitOr:
+            case SyntaxOperator.BitOr:
                 return 10;
-            case Operator.And:
+            case SyntaxOperator.And:
                 return 11;
-            case Operator.Or:
+            case SyntaxOperator.Or:
                 return 12;
-            case Operator.Assign:
-            case Operator.AddAssign:
-            case Operator.SubAssign:
-            case Operator.MulAssign:
-            case Operator.DivAssign:
+            case SyntaxOperator.Assign:
+            case SyntaxOperator.AddAssign:
+            case SyntaxOperator.SubAssign:
+            case SyntaxOperator.MulAssign:
+            case SyntaxOperator.DivAssign:
                 return 13;
             default:
                 throw new ArgumentOutOfRangeException(nameof(op), op, $"Cannot resolve operator priority (op: {op})");
@@ -99,19 +102,84 @@ internal static class SyntaxHelpers
         return 0;
     }
 
-    public static int ReadNumber(string text, int offset, out Number result)
+    public static int ReadNumber(string text, int offset, out SyntaxNumber result)
     {
-        if (ReadHexadecimal(text, offset, out var integer) is var read and > 0)
+        if (ReadHexadecimal(text, offset, out var hex) is var hexRead and > 0)
         {
-            result = new Number(integer);
-            return read;
+            result = new SyntaxNumber(hex);
+            return hexRead;
+        }
+
+        if (ReadBinary(text, offset, out var bin) is var binRead and > 0)
+        {
+            result = new SyntaxNumber(bin);
+            return binRead;
+        }
+
+        if (ReadOctal(text, offset, out var oct) is var octRead and > 0)
+        {
+            result = new SyntaxNumber(oct);
+            return octRead;
+        }
+
+        if (ReadFloat(text, offset, out var floatN) is var floatRead and > 0)
+        {
+            result = new SyntaxNumber(floatN);
+            return floatRead;
+        }
+
+        if (ReadInteger(text, offset, out var intN) is var intNRead and > 0)
+        {
+            result = new SyntaxNumber(intN);
+            return intNRead;
         }
 
         result = default;
         return 0;
     }
 
-    private static int ReadLiteral(string text, int offset, out string literal)
+    public static int ReadString(string text, int offset, out SyntaxString str)
+    {
+        if (text[offset] is not ('"' or '\''))
+        {
+            str = default;
+            return 0;
+        }
+
+        var bld = new StringBuilder();
+        var delimiter = text[offset];
+        var size = 1;
+        var escape = false;
+        for (var i = offset + size; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (escape)
+            {
+                escape = false;
+                bld.Append(c);
+            }
+            else if (c == '\\')
+            {
+                escape = true;
+            }
+            else if (c == delimiter)
+            {
+                str = new SyntaxString(delimiter, bld.ToString());
+                return size + 1;
+            }
+            else
+            {
+                bld.Append(c);
+            }
+
+            ++size;
+        }
+
+        str = default;
+        return 0;
+    }
+
+    public static int ReadLiteral(string text, int offset, out string literal)
     {
         var size = 0;
         for (var i = offset;
@@ -162,6 +230,192 @@ internal static class SyntaxHelpers
 
             ++size;
         }
+
+        return size;
+    }
+
+    private static int ReadBinary(string text, int offset, out long number)
+    {
+        if (offset + 3 >= text.Length || text[offset] != '0' || text[offset + 1] != 'b' || text[offset + 2] is not ('0' or '1'))
+        {
+            number = default;
+            return 0;
+        }
+
+        number = 0;
+        var size = 2;
+        for (var i = offset + size; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c is '0' or '1')
+            {
+                number = (number << 1) + (c - '0');
+            }
+            else if (c != '_')
+            {
+                break;
+            }
+
+            ++size;
+        }
+
+        return size;
+    }
+
+    private static int ReadOctal(string text, int offset, out long number)
+    {
+        if (offset + 3 >= text.Length || text[offset] != '0' || text[offset + 1] != 'o' || text[offset + 2] is < '0' or > '7')
+        {
+            number = default;
+            return 0;
+        }
+
+        number = 0;
+        var size = 2;
+        for (var i = offset + size; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c is >= '0' and <= '7')
+            {
+                number = number * 8 + (c - '0');
+            }
+            else if (c != '_')
+            {
+                break;
+            }
+
+            ++size;
+        }
+
+        return size;
+    }
+
+    private static int ReadFloat(string text, int offset, out double number)
+    {
+        var size = 0;
+        var negative = false;
+        if (text[offset] is var firstChar and ('-' or '+'))
+        {
+            ++size;
+            negative = firstChar == '-';
+        }
+
+        if (offset + size >= text.Length || text[offset + size] is (< '0' or > '9') and not '.')
+        {
+            number = default;
+            return 0;
+        }
+
+        var exponent1 = 0;
+        var foundDot = false;
+        var integer = 0L;
+        for (var i = offset + size; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c is >= '0' and <= '9')
+            {
+                integer = integer * 10 + (c - '0');
+                if (foundDot)
+                    --exponent1;
+            }
+            else if (c is '.')
+            {
+                if (foundDot)
+                {
+                    number = default;
+                    return 0;
+                }
+
+                foundDot = true;
+            }
+            else if (c != '_')
+            {
+                break;
+            }
+
+            ++size;
+        }
+
+        var foundExponent = offset + size < text.Length && text[offset + size] is 'e' or 'E';
+        if (foundExponent)
+        {
+            ++size;
+            var negativeExponent = false;
+            if (offset + size < text.Length && text[offset + size] is var firstExponentChar and ('-' or '+'))
+            {
+                ++size;
+                negativeExponent = firstExponentChar == '-';
+            }
+
+            var exponent2 = 0;
+            for (var i = offset + size; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (c is >= '0' and <= '9')
+                {
+                    exponent2 = exponent2 * 10 + (c - '0');
+                }
+                else if (c != '_')
+                {
+                    break;
+                }
+
+                ++size;
+            }
+
+            if (negativeExponent)
+                exponent2 = -exponent2;
+
+            exponent1 += exponent2;
+        }
+
+        if (!foundDot && !foundExponent)
+        {
+            number = default;
+            return 0;
+        }
+
+        number = integer * Math.Pow(10, exponent1);
+        if (negative)
+            number = -number;
+
+        return size;
+    }
+
+    private static int ReadInteger(string text, int offset, out long number)
+    {
+        var size = 0;
+        var negative = false;
+        if (text[offset] is var firstChar and ('-' or '+'))
+        {
+            ++size;
+            negative = firstChar == '-';
+        }
+
+        if (text[offset + size] is < '0' or > '9')
+        {
+            number = default;
+            return 0;
+        }
+
+        number = 0;
+        for (var i = offset + size; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c is >= '0' and <= '9')
+            {
+                number = number * 10 + (c - '0');
+            }
+            else if (c != '_')
+            {
+                break;
+            }
+
+            ++size;
+        }
+
+        if (negative)
+            number = -number;
 
         return size;
     }
