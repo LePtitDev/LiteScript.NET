@@ -175,4 +175,34 @@ public class SyntaxHelpersTests
         Assert.AreEqual('"', result.Delimiter);
         Assert.AreEqual(expected, result.Content);
     }
+
+    [Test]
+    public void Test_can_read_inline_comment()
+    {
+        const string text = "it's a test\r\n" +
+                            "with // a super\r\n" +
+                            "comment\r\n";
+        const string expected = " a super";
+
+        var read = SyntaxHelpers.ReadComment(text, 18, out var result);
+
+        Assert.AreEqual(11, read);
+        Assert.IsTrue(result.IsInline);
+        Assert.AreEqual(expected, result.Value);
+    }
+
+    [Test]
+    public void Test_can_read_non_inline_comment()
+    {
+        const string text = "it's a /* test\r\n" +
+                            "with a */ super\r\n" +
+                            "comment\r\n";
+        const string expected = " test\nwith a ";
+
+        var read = SyntaxHelpers.ReadComment(text, 7, out var result);
+
+        Assert.AreEqual(18, read);
+        Assert.IsFalse(result.IsInline);
+        Assert.AreEqual(expected, result.Value);
+    }
 }

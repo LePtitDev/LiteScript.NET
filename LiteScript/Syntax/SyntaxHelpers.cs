@@ -198,6 +198,66 @@ internal static class SyntaxHelpers
         return size;
     }
 
+    public static int ReadComment(string text, int offset, out SyntaxComment comment)
+    {
+        if (offset + 1 >= text.Length || text[offset] != '/' || text[offset + 1] is not ('/' or '*'))
+        {
+            comment = default;
+            return 0;
+        }
+
+        var size = 2;
+        var isInline = text[offset + 1] == '/';
+        var bld = new StringBuilder();
+        if (isInline)
+        {
+            for (var i = offset + size; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (c == '\n')
+                {
+                    break;
+                }
+                else if (c >= ' ' /* upper than [space] character = 32 */)
+                {
+                    // Lower characters are control characters
+                    bld.Append(c);
+                }
+
+                ++size;
+            }
+        }
+        else
+        {
+            var lastStar = false;
+            for (var i = offset + size; i < text.Length; i++)
+            {
+                ++size;
+                var c = text[i];
+                if (lastStar)
+                {
+                    if (c == '/')
+                        break;
+
+                    bld.Append('*');
+                }
+
+                lastStar = c == '*';
+                if (lastStar)
+                    continue;
+
+                if (c is '\n' or >= ' ' /* upper than [space] character = 32 */)
+                {
+                    // Lower characters are control characters
+                    bld.Append(c);
+                }
+            }
+        }
+
+        comment = new SyntaxComment(bld.ToString(), isInline);
+        return size;
+    }
+
     private static int ReadHexadecimal(string text, int offset, out long number)
     {
         if (offset + 3 >= text.Length || text[offset] != '0' || text[offset + 1] != 'x' || text[offset + 2] is (< '0' or > '9') and (< 'A' or > 'F') and (< 'a' or > 'f'))
