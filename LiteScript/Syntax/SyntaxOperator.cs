@@ -1,6 +1,6 @@
 ﻿namespace LiteScript.Syntax;
 
-internal enum SyntaxOperator
+public enum SyntaxOperator
 {
     // Priority levels
     PostIncr, PostDecr, Call, Get, Member,                        // P1

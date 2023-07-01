@@ -5,7 +5,7 @@ namespace LiteScript.Tests;
 
 public class SyntaxHelpersTests
 {
-    private const double MaxFloatDelta = 0.0001;
+    private const double MaxFloatDelta = double.Epsilon;
 
     [Test]
     public void Test_can_read_hexadecimal_number()
@@ -146,8 +146,7 @@ public class SyntaxHelpersTests
         var read = SyntaxHelpers.ReadString(text, 2, out var result);
 
         Assert.AreEqual(9, read);
-        Assert.AreEqual('"', result.Delimiter);
-        Assert.AreEqual(expected, result.Content);
+        Assert.AreEqual(expected, result);
     }
 
     [Test]
@@ -159,8 +158,7 @@ public class SyntaxHelpersTests
         var read = SyntaxHelpers.ReadString(text, 2, out var result);
 
         Assert.AreEqual(15, read);
-        Assert.AreEqual('\'', result.Delimiter);
-        Assert.AreEqual(expected, result.Content);
+        Assert.AreEqual(expected, result);
     }
 
     [Test]
@@ -172,8 +170,7 @@ public class SyntaxHelpersTests
         var read = SyntaxHelpers.ReadString(text, 2, out var result);
 
         Assert.AreEqual(25, read);
-        Assert.AreEqual('"', result.Delimiter);
-        Assert.AreEqual(expected, result.Content);
+        Assert.AreEqual(expected, result);
     }
 
     [Test]
@@ -187,8 +184,7 @@ public class SyntaxHelpersTests
         var read = SyntaxHelpers.ReadComment(text, 18, out var result);
 
         Assert.AreEqual(11, read);
-        Assert.IsTrue(result.IsInline);
-        Assert.AreEqual(expected, result.Value);
+        Assert.AreEqual(expected, result);
     }
 
     [Test]
@@ -202,7 +198,48 @@ public class SyntaxHelpersTests
         var read = SyntaxHelpers.ReadComment(text, 7, out var result);
 
         Assert.AreEqual(18, read);
-        Assert.IsFalse(result.IsInline);
-        Assert.AreEqual(expected, result.Value);
+        Assert.AreEqual(expected, result);
+    }
+
+    [Test]
+    public void Test_can_read_whitespace_1()
+    {
+        const string text = "foo   bar";
+
+        var read = SyntaxHelpers.ReadWhitespace(text, 3);
+
+        Assert.AreEqual(3, read);
+    }
+
+    [Test]
+    public void Test_can_read_whitespace_2()
+    {
+        const string text = "foo  \t// bar";
+
+        var read = SyntaxHelpers.ReadWhitespace(text, 3);
+
+        Assert.AreEqual(3, read);
+    }
+
+    [Test]
+    public void Test_can_read_comments_1()
+    {
+        const string text = "foo /* comment */ bar";
+
+        var read = SyntaxHelpers.ReadComment(text, 4, out var comment);
+
+        Assert.AreEqual(13, read);
+        Assert.AreEqual(" comment ", comment);
+    }
+
+    [Test]
+    public void Test_can_read_comments_2()
+    {
+        const string text = "foo // comment bar";
+
+        var read = SyntaxHelpers.ReadComment(text, 4, out var comment);
+
+        Assert.AreEqual(14, read);
+        Assert.AreEqual(" comment bar", comment);
     }
 }

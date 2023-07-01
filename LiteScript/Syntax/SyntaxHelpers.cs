@@ -1,5 +1,5 @@
-﻿using System.Drawing;
-using System.Text;
+﻿using System.Text;
+using LiteScript.Core;
 
 namespace LiteScript.Syntax;
 
@@ -102,35 +102,35 @@ internal static class SyntaxHelpers
         return 0;
     }
 
-    public static int ReadNumber(string text, int offset, out SyntaxNumber result)
+    public static int ReadNumber(string text, int offset, out Number result)
     {
         if (ReadHexadecimal(text, offset, out var hex) is var hexRead and > 0)
         {
-            result = new SyntaxNumber(hex);
+            result = new Number(hex);
             return hexRead;
         }
 
         if (ReadBinary(text, offset, out var bin) is var binRead and > 0)
         {
-            result = new SyntaxNumber(bin);
+            result = new Number(bin);
             return binRead;
         }
 
         if (ReadOctal(text, offset, out var oct) is var octRead and > 0)
         {
-            result = new SyntaxNumber(oct);
+            result = new Number(oct);
             return octRead;
         }
 
         if (ReadFloat(text, offset, out var floatN) is var floatRead and > 0)
         {
-            result = new SyntaxNumber(floatN);
+            result = new Number(floatN);
             return floatRead;
         }
 
         if (ReadInteger(text, offset, out var intN) is var intNRead and > 0)
         {
-            result = new SyntaxNumber(intN);
+            result = new Number(intN);
             return intNRead;
         }
 
@@ -138,7 +138,7 @@ internal static class SyntaxHelpers
         return 0;
     }
 
-    public static int ReadString(string text, int offset, out SyntaxString str)
+    public static int ReadString(string text, int offset, out string? str)
     {
         if (text[offset] is not ('"' or '\''))
         {
@@ -164,7 +164,7 @@ internal static class SyntaxHelpers
             }
             else if (c == delimiter)
             {
-                str = new SyntaxString(delimiter, bld.ToString());
+                str = bld.ToString();
                 return size + 1;
             }
             else
@@ -198,7 +198,7 @@ internal static class SyntaxHelpers
         return size;
     }
 
-    public static int ReadComment(string text, int offset, out SyntaxComment comment)
+    public static int ReadComment(string text, int offset, out string? comment)
     {
         if (offset + 1 >= text.Length || text[offset] != '/' || text[offset + 1] is not ('/' or '*'))
         {
@@ -254,8 +254,89 @@ internal static class SyntaxHelpers
             }
         }
 
-        comment = new SyntaxComment(bld.ToString(), isInline);
+        comment = bld.ToString();
         return size;
+    }
+
+    public static int ReadWhitespace(string text, int offset)
+    {
+        var i = offset;
+        while (i < text.Length)
+        {
+            if (text[i] is ' ' or '\t' or '\r' or '\n')
+            {
+                ++i;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return i - offset;
+    }
+
+    public static int ReadPrefixOperator(string text, int offset, out SyntaxOperator result)
+    {
+        if (text[offset] == '+')
+        {
+            if (offset + 1 < text.Length && text[offset + 1] == '+')
+            {
+                result = SyntaxOperator.PreIncr;
+                return 2;
+            }
+
+            result = SyntaxOperator.UnaryPlus;
+            return 1;
+        }
+
+        if (text[offset] == '-')
+        {
+            if (offset + 1 < text.Length && text[offset + 1] == '-')
+            {
+                result = SyntaxOperator.PreDecr;
+                return 2;
+            }
+
+            result = SyntaxOperator.UnaryMinus;
+            return 1;
+        }
+
+        if (text[offset] == '!')
+        {
+            result = SyntaxOperator.Not;
+            return 1;
+        }
+
+        if (text[offset] == '~')
+        {
+            result = SyntaxOperator.BitNot;
+            return 1;
+        }
+
+        result = default;
+        return 0;
+    }
+
+    public static int ReadSuffixOperator(string text, int offset, out SyntaxOperator result)
+    {
+        if (offset + 1 < text.Length)
+        {
+            if (text[offset] == '+' && text[offset + 1] == '+')
+            {
+                result = SyntaxOperator.PostIncr;
+                return 2;
+            }
+
+            if (text[offset] == '-' && text[offset + 1] == '-')
+            {
+                result = SyntaxOperator.PostDecr;
+                return 2;
+            }
+        }
+
+        result = default;
+        return 0;
     }
 
     private static int ReadHexadecimal(string text, int offset, out long number)
